@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
+import Groq from "groq-sdk";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { topic, count = 10 } = body;
 
-    // Vocabulary uses Gemini 2.0 Flash — free tier, fast
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-    const prompt = `Generate ${count} IELTS Academic vocabulary words for the topic: "${topic}".
+    // Vocabulary uses Groq (Llama 3.3-70b) — fast, free
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      max_tokens: 2000,
+      messages: [
+        {
+          role: "user",
+          content: `Generate ${count} IELTS Academic vocabulary words for the topic: "${topic}".
 
 For each word provide: the word, definition (clear and concise), and one example sentence showing IELTS-level academic usage.
 
@@ -20,17 +24,19 @@ Respond ONLY in valid JSON format, no extra text before or after:
   "words": [
     {"word": "string", "definition": "string", "example": "string"}
   ]
-}`;
+}`,
+        },
+      ],
+    });
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const text = completion.choices[0]?.message?.content ?? "";
 
     let parsed;
     try {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
     } catch {
-      return NextResponse.json({ error: "Parse error", raw: text.slice(0, 200) }, { status: 500 });
+      return NextResponse.json({ error: "Parse error" }, { status: 500 });
     }
 
     if (!parsed?.words) {
@@ -46,7 +52,7 @@ Respond ONLY in valid JSON format, no extra text before or after:
       })),
     });
 
-    return NextResponse.json({ words: parsed.words, count: created.count, aiModel: "gemini-2.0-flash" });
+    return NextResponse.json({ words: parsed.words, count: created.count, aiModel: "llama-3.3-70b" });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
