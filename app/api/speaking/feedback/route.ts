@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { IELTS_SPEAKING_SYSTEM } from "@/lib/anthropic";
 import { prisma } from "@/lib/prisma";
-import OpenAI from "openai";
+import Groq from "groq-sdk";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,14 +12,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Transcript too short" }, { status: 400 });
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json({ error: "OPENAI_API_KEY not set" }, { status: 500 });
-    }
-
-    // Speaking uses GPT-4o — excellent at conversational analysis
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+    // Speaking uses Groq (Llama 3.3-70b) — fast, free, great for conversation analysis
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
       max_tokens: 1200,
       messages: [
         { role: "system", content: IELTS_SPEAKING_SYSTEM },
@@ -41,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!feedback) {
-      return NextResponse.json({ error: "Could not parse AI response", raw: text.slice(0, 200) }, { status: 500 });
+      return NextResponse.json({ error: "Could not parse AI response" }, { status: 500 });
     }
 
     const submission = await prisma.speakingSubmission.create({
@@ -63,7 +59,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ feedback, submissionId: submission.id, aiModel: "gpt-4o" });
+    return NextResponse.json({ feedback, submissionId: submission.id, aiModel: "llama-3.3-70b" });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });

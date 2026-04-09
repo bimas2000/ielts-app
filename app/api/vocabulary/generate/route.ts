@@ -1,42 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
-import OpenAI from "openai";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { topic, count = 10 } = body;
 
-    // Vocabulary uses GPT-4o-mini — fast and cost-efficient
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      max_tokens: 2000,
-      messages: [
-        {
-          role: "user",
-          content: `Generate ${count} IELTS Academic vocabulary words for the topic: "${topic}".
+    // Vocabulary uses Gemini 2.0 Flash — free tier, fast
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+    const prompt = `Generate ${count} IELTS Academic vocabulary words for the topic: "${topic}".
 
 For each word provide: the word, definition (clear and concise), and one example sentence showing IELTS-level academic usage.
 
-Respond ONLY in valid JSON format:
+Respond ONLY in valid JSON format, no extra text before or after:
 {
   "words": [
     {"word": "string", "definition": "string", "example": "string"}
   ]
-}`,
-        },
-      ],
-    });
+}`;
 
-    const text = completion.choices[0]?.message?.content ?? "";
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
 
     let parsed;
     try {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
     } catch {
-      return NextResponse.json({ error: "Parse error" }, { status: 500 });
+      return NextResponse.json({ error: "Parse error", raw: text.slice(0, 200) }, { status: 500 });
     }
 
     if (!parsed?.words) {
@@ -52,7 +46,7 @@ Respond ONLY in valid JSON format:
       })),
     });
 
-    return NextResponse.json({ words: parsed.words, count: created.count, aiModel: "gpt-4o-mini" });
+    return NextResponse.json({ words: parsed.words, count: created.count, aiModel: "gemini-2.0-flash" });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });

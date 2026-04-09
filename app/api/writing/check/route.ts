@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { IELTS_WRITING_SYSTEM } from "@/lib/anthropic";
 import { prisma } from "@/lib/prisma";
 import { countWords } from "@/lib/utils";
-import OpenAI from "openai";
+import Groq from "groq-sdk";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,10 +16,10 @@ export async function POST(req: NextRequest) {
     const wordCount = countWords(response);
     const taskLabel = taskType === "task1" ? "Task 1 (150+ words)" : "Task 2 (250+ words)";
 
-    // Writing uses GPT-4o — excellent for detailed essay analysis
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+    // Writing uses Groq (Llama 3.3-70b) — fast, free, highly capable
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
       max_tokens: 1500,
       messages: [
         { role: "system", content: IELTS_WRITING_SYSTEM },
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ feedback, submissionId: submission.id, aiModel: "gpt-4o" });
+    return NextResponse.json({ feedback, submissionId: submission.id, aiModel: "llama-3.3-70b" });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
