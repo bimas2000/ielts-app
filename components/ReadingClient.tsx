@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { cn, formatTime, bandScoreBg } from "@/lib/utils";
-import { BookOpen, Clock, CheckCircle, XCircle, ChevronRight, Plus, Lightbulb } from "lucide-react";
+import { BookOpen, Clock, CheckCircle, XCircle, ChevronRight, Plus, Lightbulb, GraduationCap, ArrowRight } from "lucide-react";
 
 interface Question {
   id: number;
@@ -45,7 +47,9 @@ function estimateBand(correct: number, total: number): number {
 }
 
 export default function ReadingClient({ questions }: Props) {
-  const [mode, setMode] = useState<"tip" | "practice" | "result">("tip");
+  const searchParams = useSearchParams();
+  const initMode = searchParams.get("mode") === "review" ? "review" : "start";
+  const [mode, setMode] = useState<"start" | "tip" | "practice" | "result" | "review">(initMode);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [timeLeft, setTimeLeft] = useState(60 * 60); // 60 min
@@ -110,6 +114,118 @@ export default function ReadingClient({ questions }: Props) {
   const userAnswer = answers[current.id];
   const isCorrect = userAnswer?.toLowerCase().trim() === current.answer.toLowerCase().trim();
 
+  if (mode === "review") {
+    return (
+      <div className="p-4 md:p-6 max-w-4xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <BookOpen className="w-6 h-6 text-blue-600" /> Pembahasan Reading
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">Review semua soal beserta jawaban dan penjelasan</p>
+        </div>
+        <div className="space-y-4 mb-6">
+          {questions.map((q, i) => {
+            const opts: string[] = q.options ? JSON.parse(q.options) : [];
+            return (
+              <div key={q.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                {q.passage && (
+                  <div className="bg-blue-50 border-b border-blue-100 p-4 max-h-48 overflow-y-auto">
+                    <p className="text-xs font-semibold text-blue-600 mb-2">Passage {q.partNumber}</p>
+                    <p className="text-sm text-gray-700 leading-relaxed">{q.passage}</p>
+                  </div>
+                )}
+                <div className="p-4">
+                  <div className="flex gap-2 mb-3">
+                    <span className="bg-blue-600 text-white text-xs font-bold px-2 py-0.5 rounded shrink-0 h-fit">{i + 1}</span>
+                    <p className="text-gray-800 font-medium text-sm">{q.question}</p>
+                  </div>
+                  {opts.length > 0 ? (
+                    <div className="space-y-1.5 mb-3">
+                      {opts.map((opt, j) => (
+                        <div key={j} className={cn(
+                          "px-3 py-2 rounded-lg text-sm border",
+                          opt === q.answer ? "bg-green-50 border-green-300 text-green-800 font-medium" : "bg-gray-50 border-gray-200 text-gray-600"
+                        )}>
+                          {opt === q.answer && "✓ "}{opt}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mb-3 px-3 py-2 bg-green-50 border border-green-300 rounded-lg text-sm text-green-800 font-medium">
+                      ✓ Jawaban: <strong>{q.answer}</strong>
+                    </div>
+                  )}
+                  {q.explanation && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex gap-2">
+                      <Lightbulb className="w-3.5 h-3.5 text-yellow-600 shrink-0 mt-0.5" />
+                      <p className="text-xs text-yellow-800 leading-relaxed">{q.explanation}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex gap-3">
+          <button onClick={() => { setMode("practice"); setTimerActive(true); setCurrentIdx(0); setAnswers({}); setTimeLeft(60 * 60); }}
+            className="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700">
+            Mulai Test
+          </button>
+          <Link href="/learn/reading" className="flex items-center gap-2 border border-gray-200 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">
+            <GraduationCap className="w-4 h-4" /> Belajar Lagi
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "start") {
+    return (
+      <div className="p-4 md:p-6 max-w-4xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <BookOpen className="w-6 h-6 text-blue-600" /> Reading Practice
+          </h1>
+          <p className="text-gray-500 text-sm mt-1">{questions.length} soal tersedia</p>
+        </div>
+
+        {/* 3-step flow card */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5 mb-5">
+          <p className="text-sm font-bold text-gray-700 mb-4">Alur Belajar yang Disarankan:</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link href="/learn/reading" className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 text-indigo-700 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-indigo-100 transition-colors">
+              <GraduationCap className="w-4 h-4" />
+              <div>
+                <p className="font-semibold">1. Belajar</p>
+                <p className="text-xs opacity-70">~20 menit</p>
+              </div>
+            </Link>
+            <ArrowRight className="w-4 h-4 text-gray-400 shrink-0" />
+            <button onClick={() => { setMode("practice"); setTimerActive(true); setCurrentIdx(0); setAnswers({}); setTimeLeft(60 * 60); }}
+              className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-green-100 transition-colors">
+              <BookOpen className="w-4 h-4" />
+              <div>
+                <p className="font-semibold">2. Practice Test</p>
+                <p className="text-xs opacity-70">60 menit</p>
+              </div>
+            </button>
+            <ArrowRight className="w-4 h-4 text-gray-400 shrink-0" />
+            <button onClick={() => setMode("review")}
+              className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-700 px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-amber-100 transition-colors">
+              <Lightbulb className="w-4 h-4" />
+              <div>
+                <p className="font-semibold">3. Pembahasan</p>
+                <p className="text-xs opacity-70">Review jawaban</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <TipsPanel tips={READING_TIPS} tipIdx={tipIdx} setTipIdx={setTipIdx} />
+      </div>
+    );
+  }
+
   if (mode === "tip") {
     return (
       <div className="p-4 md:p-6 max-w-4xl mx-auto">
@@ -172,9 +288,14 @@ export default function ReadingClient({ questions }: Props) {
             );
           })}
         </div>
-        <button onClick={() => { setMode("tip"); setAnswers({}); setTimeLeft(60 * 60); }} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700">
-          Latihan Lagi
-        </button>
+        <div className="flex gap-3">
+          <button onClick={() => setMode("review")} className="bg-amber-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-amber-600 flex items-center gap-2">
+            <Lightbulb className="w-4 h-4" /> Lihat Pembahasan
+          </button>
+          <button onClick={() => { setMode("start"); setAnswers({}); setTimeLeft(60 * 60); }} className="border border-gray-200 text-gray-600 px-6 py-2 rounded-lg font-medium hover:bg-gray-50">
+            Latihan Lagi
+          </button>
+        </div>
       </div>
     );
   }

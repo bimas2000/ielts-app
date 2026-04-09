@@ -13,10 +13,14 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, group: "main" },
   { href: "/study-plan", label: "Study Plan", icon: CalendarDays, group: "main" },
   { href: "/progress", label: "Progress", icon: BarChart3, group: "main" },
-  { href: "/reading", label: "Reading", icon: BookOpen, group: "practice" },
-  { href: "/listening", label: "Listening", icon: Headphones, group: "practice" },
-  { href: "/writing", label: "Writing", icon: PenLine, group: "practice" },
-  { href: "/speaking", label: "Speaking", icon: Mic, group: "practice" },
+  { href: "/learn/reading", label: "Belajar Reading", icon: BookOpen, group: "learn" },
+  { href: "/learn/listening", label: "Belajar Listening", icon: Headphones, group: "learn" },
+  { href: "/learn/writing", label: "Belajar Writing", icon: PenLine, group: "learn" },
+  { href: "/learn/speaking", label: "Belajar Speaking", icon: Mic, group: "learn" },
+  { href: "/reading", label: "Reading Practice", icon: BookOpen, group: "practice" },
+  { href: "/listening", label: "Listening Practice", icon: Headphones, group: "practice" },
+  { href: "/writing", label: "Writing Practice", icon: PenLine, group: "practice" },
+  { href: "/speaking", label: "Speaking Practice", icon: Mic, group: "practice" },
   { href: "/vocabulary", label: "Vocabulary", icon: Brain, group: "practice" },
   { href: "/mock-test", label: "Mock Test", icon: ClipboardList, group: "practice" },
 ];
@@ -81,6 +85,12 @@ export default function Sidebar() {
       <nav className="flex-1 p-3 space-y-0.5 overflow-y-auto">
         {navItems.filter((i) => i.group === "main").map((item) => (
           <NavLink key={item.href} item={item} active={pathname === item.href} onClick={() => setMobileOpen(false)} />
+        ))}
+        <div className="pt-3 pb-1">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Belajar</p>
+        </div>
+        {navItems.filter((i) => i.group === "learn").map((item) => (
+          <NavLink key={item.href} item={item} active={pathname.startsWith(item.href)} onClick={() => setMobileOpen(false)} />
         ))}
         <div className="pt-3 pb-1">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-3">Practice</p>

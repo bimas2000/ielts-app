@@ -7,6 +7,7 @@ import {
   CalendarDays, CheckCircle2, Circle, Clock, Target, Flame,
   BookOpen, Headphones, PenLine, Mic, Brain, ClipboardList,
   ChevronDown, ChevronUp, RefreshCw, Sparkles, BarChart3,
+  GraduationCap, Play, FileText,
 } from "lucide-react";
 import { FOCUS_COLORS, FOCUS_LABELS, totalDailyMinutes } from "@/lib/studyPlanGenerator";
 
@@ -49,6 +50,13 @@ const SECTION_ICONS: Record<string, React.ElementType> = {
   vocabulary: Brain,
   mock: ClipboardList,
   review: BarChart3,
+};
+
+const LEARN_LINKS: Record<string, string> = {
+  reading: "/learn/reading",
+  listening: "/learn/listening",
+  writing: "/learn/writing",
+  speaking: "/learn/speaking",
 };
 
 const SECTION_COLORS: Record<string, string> = {
@@ -406,13 +414,32 @@ export default function StudyPlanClient({ data }: Props) {
                           </p>
                         </div>
                         <p className="text-xs text-gray-500 leading-relaxed">{task.description}</p>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <span className="text-xs text-gray-400 flex items-center gap-0.5">
+                        <div className="flex items-center gap-1 mt-2 flex-wrap">
+                          <span className="text-xs text-gray-400 flex items-center gap-0.5 mr-1">
                             <Clock className="w-2.5 h-2.5" />{task.duration} min
                           </span>
+                          {LEARN_LINKS[task.section] && (
+                            <Link
+                              href={LEARN_LINKS[task.section]}
+                              className="flex items-center gap-1 text-xs bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-2 py-0.5 rounded-full transition-colors"
+                            >
+                              <GraduationCap className="w-2.5 h-2.5" /> Belajar
+                            </Link>
+                          )}
                           {task.href && (
-                            <Link href={task.href} className="text-xs text-indigo-600 hover:underline">
-                              Mulai →
+                            <Link
+                              href={task.href}
+                              className="flex items-center gap-1 text-xs bg-green-50 text-green-700 hover:bg-green-100 px-2 py-0.5 rounded-full transition-colors"
+                            >
+                              <Play className="w-2.5 h-2.5" /> Test
+                            </Link>
+                          )}
+                          {task.href && (
+                            <Link
+                              href={task.href + "?mode=review"}
+                              className="flex items-center gap-1 text-xs bg-amber-50 text-amber-700 hover:bg-amber-100 px-2 py-0.5 rounded-full transition-colors"
+                            >
+                              <FileText className="w-2.5 h-2.5" /> Review
                             </Link>
                           )}
                         </div>
