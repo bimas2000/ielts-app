@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { anthropic } from "@/lib/anthropic";
 import { prisma } from "@/lib/prisma";
+import OpenAI from "openai";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { topic, count = 10 } = body;
 
-    // Vocabulary uses Claude — best quality IELTS academic words
-    const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
+    // Vocabulary uses GPT-4o-mini — fast and cost-efficient
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
       max_tokens: 2000,
       messages: [
         {
@@ -28,14 +29,11 @@ Respond ONLY in valid JSON format:
       ],
     });
 
-    const content = message.content[0];
-    if (content.type !== "text") {
-      return NextResponse.json({ error: "AI error" }, { status: 500 });
-    }
+    const text = completion.choices[0]?.message?.content ?? "";
 
     let parsed;
     try {
-      const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
       parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
     } catch {
       return NextResponse.json({ error: "Parse error" }, { status: 500 });
@@ -54,7 +52,7 @@ Respond ONLY in valid JSON format:
       })),
     });
 
-    return NextResponse.json({ words: parsed.words, count: created.count, aiModel: "claude-sonnet-4-6" });
+    return NextResponse.json({ words: parsed.words, count: created.count, aiModel: "gpt-4o-mini" });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json({ error: message }, { status: 500 });
