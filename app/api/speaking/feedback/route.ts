@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { anthropic, IELTS_SPEAKING_SYSTEM } from "@/lib/anthropic";
+import { IELTS_SPEAKING_SYSTEM } from "@/lib/anthropic";
 import { prisma } from "@/lib/prisma";
+import OpenAI from "openai";
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -10,11 +13,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Transcript too short" }, { status: 400 });
   }
 
-  const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
+  // Speaking uses GPT-4o — excellent at conversational analysis
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
     max_tokens: 1200,
-    system: IELTS_SPEAKING_SYSTEM,
     messages: [
+      { role: "system", content: IELTS_SPEAKING_SYSTEM },
       {
         role: "user",
         content: `IELTS Speaking Part ${part}\n\nQUESTION: ${question}\n\nCANDIDATE RESPONSE (transcript):\n${transcript}`,
@@ -22,14 +26,11 @@ export async function POST(req: NextRequest) {
     ],
   });
 
-  const content = message.content[0];
-  if (content.type !== "text") {
-    return NextResponse.json({ error: "AI error" }, { status: 500 });
-  }
+  const text = completion.choices[0]?.message?.content ?? "";
 
   let feedback;
   try {
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
     feedback = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
   } catch {
     feedback = null;
@@ -58,5 +59,5 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ feedback, submissionId: submission.id });
+  return NextResponse.json({ feedback, submissionId: submission.id, aiModel: "gpt-4o" });
 }

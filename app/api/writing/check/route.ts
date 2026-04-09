@@ -65,5 +65,5 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ feedback, submissionId: submission.id });
+  return NextResponse.json({ feedback, submissionId: submission.id, aiModel: "claude-sonnet-4-6" });
 }

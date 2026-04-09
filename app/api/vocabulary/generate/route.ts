@@ -1,39 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { anthropic } from "@/lib/anthropic";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/prisma";
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { topic, count = 10 } = body;
 
-  const message = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 2000,
-    messages: [
-      {
-        role: "user",
-        content: `Generate ${count} IELTS Academic vocabulary words for the topic: "${topic}".
+  // Vocabulary uses Gemini — free tier (1500 req/day), great for word generation
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-For each word provide: the word, definition (clear and concise), and one example sentence showing IELTS-level usage.
+  const prompt = `Generate ${count} IELTS Academic vocabulary words for the topic: "${topic}".
 
-Respond in JSON format:
+For each word provide: the word, definition (clear and concise), and one example sentence showing IELTS-level academic usage.
+
+Respond ONLY in valid JSON format, no extra text:
 {
   "words": [
-    {"word": string, "definition": string, "example": string}
+    {"word": "string", "definition": "string", "example": "string"}
   ]
-}`,
-      },
-    ],
-  });
+}`;
 
-  const content = message.content[0];
-  if (content.type !== "text") {
-    return NextResponse.json({ error: "AI error" }, { status: 500 });
-  }
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
 
   let parsed;
   try {
-    const jsonMatch = content.text.match(/\{[\s\S]*\}/);
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
     parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
   } catch {
     return NextResponse.json({ error: "Parse error" }, { status: 500 });
@@ -53,7 +47,7 @@ Respond in JSON format:
     })),
   });
 
-  return NextResponse.json({ words: parsed.words, count: created.count });
+  return NextResponse.json({ words: parsed.words, count: created.count, aiModel: "gemini-1.5-flash" });
 }
 
 export async function GET() {
