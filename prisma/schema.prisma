@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model UserSettings {
+  id             Int      @id @default(1)
+  targetBand     Float    @default(7.0)
+  examDate       DateTime?
+  currentBand    Float    @default(0)
+  studyStreak    Int      @default(0)
+  lastStudyDate  DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model PracticeSession {
+  id          Int      @id @default(autoincrement())
+  section     String
+  score       Float?
+  bandScore   Float?
+  duration    Int?
+  notes       String?
+  feedback    String?
+  createdAt   DateTime @default(now())
+}
+
+model Question {
+  id          Int      @id @default(autoincrement())
+  section     String
+  type        String
+  passage     String?
+  audioUrl    String?
+  question    String
+  options     String?
+  answer      String
+  explanation String?
+  difficulty  String   @default("medium")
+  source      String?
+  partNumber  Int?
+  createdAt   DateTime @default(now())
+}
+
+model WritingPrompt {
+  id           Int      @id @default(autoincrement())
+  taskType     String
+  prompt       String
+  imageUrl     String?
+  sampleAnswer String?
+  createdAt    DateTime @default(now())
+}
+
+model WritingSubmission {
+  id         Int      @id @default(autoincrement())
+  promptId   Int?
+  taskType   String
+  prompt     String
+  response   String
+  wordCount  Int?
+  timeTaken  Int?
+  aiFeedback String?
+  bandScore  Float?
+  createdAt  DateTime @default(now())
+}
+
+model SpeakingSubmission {
+  id         Int      @id @default(autoincrement())
+  part       Int
+  question   String
+  transcript String?
+  aiFeedback String?
+  bandScore  Float?
+  duration   Int?
+  createdAt  DateTime @default(now())
+}
+
+model VocabularyWord {
+  id          Int      @id @default(autoincrement())
+  word        String
+  definition  String
+  example     String?
+  topic       String?
+  mastered    Boolean  @default(false)
+  reviewCount Int      @default(0)
+  lastReview  DateTime?
+  createdAt   DateTime @default(now())
+}
+
+model MockTest {
+  id             Int      @id @default(autoincrement())
+  totalScore     Float?
+  readingScore   Float?
+  listeningScore Float?
+  writingScore   Float?
+  speakingScore  Float?
+  duration       Int?
+  completed      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
+
+model StudyPlan {
+  id          Int      @id @default(autoincrement())
+  weekNumber  Int
+  dayOfWeek   Int      // 1=Mon, 7=Sun
+  date        DateTime
+  tasks       String   // JSON array of tasks
+  focus       String   // main focus: reading/listening/writing/speaking/mixed/mock/rest
+  completed   Boolean  @default(false)
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+model DailyTask {
+  id          Int      @id @default(autoincrement())
+  planDate    DateTime
+  section     String   // reading/listening/writing/speaking/vocabulary/mock/review
+  taskTitle   String
+  description String
+  duration    Int      // minutes
+  done        Boolean  @default(false)
+  href        String?  // link to the page
+  createdAt   DateTime @default(now())
+}
