@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/Sidebar";
+import AiTutor from "@/components/AiTutor";
 
 const geist = Geist({
   variable: "--font-geist-sans",
@@ -26,6 +27,7 @@ export default function RootLayout({
           {/* pt-14 on mobile for fixed top bar, no padding on desktop */}
           <main className="flex-1 overflow-y-auto pt-14 md:pt-0">{children}</main>
         </div>
+        <AiTutor />
       </body>
     </html>
   );

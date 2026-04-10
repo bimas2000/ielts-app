@@ -250,6 +250,45 @@ export default function WritingClient({ data }: Props) {
             </ul>
           </div>
 
+          {/* Task 1 Chart */}
+          {taskType === "task1" && (
+            <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Sample Chart — Task 1</p>
+              <svg viewBox="0 0 480 200" className="w-full" aria-label="Bar chart showing household ownership vs renting in England and Wales 1918-2011">
+                {/* Grid lines */}
+                {[0, 25, 50, 75, 100].map((v) => (
+                  <g key={v}>
+                    <line x1="50" y1={170 - v * 1.4} x2="460" y2={170 - v * 1.4} stroke="#f0f0f0" strokeWidth="1" />
+                    <text x="44" y={174 - v * 1.4} textAnchor="end" fontSize="9" fill="#9ca3af">{v}%</text>
+                  </g>
+                ))}
+                {/* Bars for Owned */}
+                {[
+                  { year: "1918", owned: 23, x: 72 },
+                  { year: "1939", owned: 32, x: 130 },
+                  { year: "1953", owned: 32, x: 188 },
+                  { year: "1961", owned: 43, x: 246 },
+                  { year: "1971", owned: 52, x: 304 },
+                  { year: "1981", owned: 58, x: 362 },
+                  { year: "2001", owned: 70, x: 420 },
+                ].map(({ year, owned, x }) => (
+                  <g key={year}>
+                    <rect x={x - 12} y={170 - owned * 1.4} width="11" height={owned * 1.4} fill="#3b82f6" rx="1" />
+                    <rect x={x + 1} y={170 - (100 - owned) * 1.4} width="11" height={(100 - owned) * 1.4} fill="#f97316" rx="1" />
+                    <text x={x + 1} y="185" textAnchor="middle" fontSize="8" fill="#6b7280">{year}</text>
+                  </g>
+                ))}
+                {/* Legend */}
+                <rect x="55" y="10" width="10" height="8" fill="#3b82f6" rx="1" />
+                <text x="68" y="18" fontSize="9" fill="#374151">Owned</text>
+                <rect x="110" y="10" width="10" height="8" fill="#f97316" rx="1" />
+                <text x="123" y="18" fontSize="9" fill="#374151">Rented</text>
+                <text x="265" y="12" textAnchor="middle" fontSize="10" fill="#111827" fontWeight="600">Household Tenure in England &amp; Wales (%)</text>
+              </svg>
+              <p className="text-xs text-gray-400 mt-1 text-center">Gunakan data chart ini sebagai referensi untuk menulis Task 1</p>
+            </div>
+          )}
+
           {/* Prompt selector */}
           <div className="mb-3">
             <label className="text-xs font-medium text-gray-500 mb-1 block">Prompt</label>
